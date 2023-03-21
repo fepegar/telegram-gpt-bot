@@ -49,12 +49,13 @@ class Bot:
         )
         self._application.add_handler(new_session_handler)
 
-    async def _chat(self, text: str) -> str:
+    async def _chat(self, text: str) -> tuple[str, float]:
         logger.info("Getting response from chatbot...")
         await self._send("[Getting response from chatbot...]")
-        reply, _ = self._chatbot(text)
+        reply, cost = self._chatbot(text)
         logger.info(f'Reply received: "{reply}"')
-        return reply
+        # logger.info(f'Cost: £{100 * cost:.3}p')
+        return reply, cost
 
     async def _send(self, message: str) -> None:
         assert self.update.effective_chat is not None
@@ -83,8 +84,9 @@ class Bot:
         text = update.message.text
         assert isinstance(text, str)
         logger.info(f'Text message received: "{text}"')
-        reply = await self._chat(text)
+        reply, cost = await self._chat(text)
         assert update.effective_chat is not None
+        await self._send(f'[Cost: £{100 * cost:.3}p]')
         await self._send(reply)
 
     async def _check_is_me(self) -> bool:
@@ -140,7 +142,8 @@ class Bot:
                 transcript = self._transcriber(mp3_path)
                 logger.info(f'Transcript: "{transcript}"')
                 await self._send(f'[Transcript: "{transcript}"]')
-                reply = await self._chat(transcript)
+                reply, cost = await self._chat(transcript)
+                # await self._send(f'[Cost: £{100 * cost:.3}p]')
                 await self._send(reply)
                 return
             except openai.error.APIConnectionError:

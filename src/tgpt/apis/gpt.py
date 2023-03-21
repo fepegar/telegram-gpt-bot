@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 import openai
 
+from .exchange import usd_to_gbp
+
 
 @dataclass
 class SystemMessage:
@@ -28,10 +30,18 @@ class ChatGPT:
         "You are ChatGPT, a large language model trained by OpenAI."
         " Answer as concisely as possible."
     )
+    _PRICING_USD = 0.002 / 1000  # $0.002 per 1000 tokens
 
     def __init__(self) -> None:
         self.history: list[SystemMessage | UserMessage | AssistantMessage]
         self.history = [SystemMessage(self._DEFAULT_SYSTEM_MESSAGE)]
+
+    @property
+    def gbp_per_token(self) -> float:
+        return usd_to_gbp(self._PRICING_USD)
+
+    def cost_gbp(self, num_tokens: int) -> float:
+        return num_tokens * self.gbp_per_token
 
     @property
     def _messages(self) -> list[dict[str, str]]:
@@ -45,10 +55,11 @@ class ChatGPT:
         assert isinstance(completion, openai.openai_object.OpenAIObject)
         return completion
 
-    def __call__(self, message: str) -> tuple[str, int]:
+    def __call__(self, message: str) -> tuple[str, float]:
         self.history.append(UserMessage(message))
         completion = self._call_api()
         reply = completion.choices[0].message.content
-        num_tokens = completion.usage.total_tokens
         self.history.append(AssistantMessage(reply))
-        return reply, num_tokens
+        num_tokens = completion.usage.total_tokens
+        cost_gbp = self.cost_gbp(num_tokens)
+        return reply, cost_gbp
