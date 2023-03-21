@@ -16,6 +16,12 @@ class UserMessage:
     role: str = "user"
 
 
+@dataclass
+class AssistantMessage:
+    content: str
+    role: str = "assistant"
+
+
 class ChatGPT:
     _MODEL_NAME = "gpt-3.5-turbo"
     _DEFAULT_SYSTEM_MESSAGE = (
@@ -24,7 +30,7 @@ class ChatGPT:
     )
 
     def __init__(self) -> None:
-        self.history: list[SystemMessage | UserMessage]
+        self.history: list[SystemMessage | UserMessage | AssistantMessage]
         self.history = [SystemMessage(self._DEFAULT_SYSTEM_MESSAGE)]
 
     @property
@@ -44,5 +50,5 @@ class ChatGPT:
         completion = self._call_api()
         reply = completion.choices[0].message.content
         num_tokens = completion.usage.prompt_tokens
-        self.history.append(SystemMessage(reply))
+        self.history.append(AssistantMessage(reply))
         return reply, num_tokens
