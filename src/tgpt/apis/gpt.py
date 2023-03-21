@@ -49,6 +49,6 @@ class ChatGPT:
         self.history.append(UserMessage(message))
         completion = self._call_api()
         reply = completion.choices[0].message.content
-        num_tokens = completion.usage.prompt_tokens
+        num_tokens = completion.usage.total_tokens
         self.history.append(AssistantMessage(reply))
         return reply, num_tokens
