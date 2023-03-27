@@ -3,7 +3,6 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
 
 import openai
 from pydub import AudioSegment
@@ -15,7 +14,7 @@ from telegram.ext import ContextTypes
 from telegram.ext import MessageHandler
 from telegram.ext import filters
 
-from .apis import ChatGPT
+from .apis import GPT4
 from .apis import Whisper
 from .utils import get_cache_dir
 from .utils import get_logger
@@ -27,11 +26,13 @@ class Bot:
     def __init__(self) -> None:
         logger.info("Initializing bot")
         self._transcriber = Whisper()
-        self._chatbot = ChatGPT()
+        self._chatbot_class = GPT4
+        self._chatbot = self._chatbot_class()
         telegram_token = os.environ["TELEGRAM_BOT_TOKEN"]
         self._application = ApplicationBuilder().token(telegram_token).build()
         self._add_handlers()
         self._cache_dir = get_cache_dir()
+        self._show_cost = False
 
     def _add_handlers(self) -> None:
         text_handler = MessageHandler(
@@ -54,7 +55,7 @@ class Bot:
         await self._send("[Getting response from chatbot...]")
         reply, cost = self._chatbot(text)
         logger.info(f'Reply received: "{reply}"')
-        # logger.info(f'Cost: £{100 * cost:.3}p')
+        logger.info(f"Cost: £{100 * cost:.3}p")
         return reply, cost
 
     async def _send(self, message: str) -> None:
@@ -84,8 +85,10 @@ class Bot:
         text = update.message.text
         assert isinstance(text, str)
         logger.info(f'Text message received: "{text}"')
-        reply, _ = await self._chat(text)
+        reply, cost = await self._chat(text)
         assert update.effective_chat is not None
+        if self._show_cost:
+            await self._send(f"[Cost: £{100 * cost:.3}p]")
         await self._send(reply)
 
     async def _check_is_me(self) -> bool:
@@ -98,9 +101,18 @@ class Bot:
             await self._send("Sorry, I'm not allowed to chat with you.")
             return False
 
-    async def _start_session(self, *args: Any) -> None:
-        logger.info("Initializing new ChatGPT session")
-        self._chatbot = ChatGPT()
+    async def _start_session(
+        self,
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
+    ) -> None:
+        self._set_update_context(update, context)
+        if not await self._check_is_me():
+            return
+        message = f"Initializing chatbot session ({self._chatbot_class.__name__})"
+        logger.info(message)
+        self._send(message)
+        self._chatbot = self._chatbot_class()
 
     async def _get_mp3_from_voice(self, voice: Voice) -> Path:
         logger.info(f"Voice message received ({voice.duration} seconds)")
@@ -141,7 +153,9 @@ class Bot:
                 transcript = self._transcriber(mp3_path)
                 logger.info(f'Transcript: "{transcript}"')
                 await self._send(f'[Transcript: "{transcript}"]')
-                reply, _ = await self._chat(transcript)
+                reply, cost = await self._chat(transcript)
+                if self._show_cost:
+                    await self._send(f"[Cost: £{100 * cost:.3}p]")
                 await self._send(reply)
                 return
             except openai.error.APIConnectionError:
