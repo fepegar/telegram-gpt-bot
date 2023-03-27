@@ -24,13 +24,13 @@ class AssistantMessage:
     role: str = "assistant"
 
 
-class ChatGPT:
-    _MODEL_NAME = "gpt-3.5-turbo"
+class GPT:
+    _MODEL_NAME: str
+    _PRICING_USD: float
     _DEFAULT_SYSTEM_MESSAGE = (
         "You are ChatGPT, a large language model trained by OpenAI."
         " Answer as concisely as possible."
     )
-    _PRICING_USD = 0.002 / 1000  # $0.002 per 1000 tokens
 
     def __init__(self) -> None:
         self.history: list[SystemMessage | UserMessage | AssistantMessage]
@@ -63,3 +63,13 @@ class ChatGPT:
         num_tokens = completion.usage.total_tokens
         cost_gbp = self.cost_gbp(num_tokens)
         return reply, cost_gbp
+
+
+class ChatGPT(GPT):
+    _MODEL_NAME = "gpt-3.5-turbo"
+    _PRICING_USD = 0.002 / 1000  # $0.002 per 1000 tokens
+
+
+class GPT4(GPT):
+    _MODEL_NAME = "gpt-4"
+    _PRICING_USD = 0.03 / 1000  # $0.03 per 1000 tokens

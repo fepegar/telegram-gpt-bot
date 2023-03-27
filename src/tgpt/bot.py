@@ -84,9 +84,8 @@ class Bot:
         text = update.message.text
         assert isinstance(text, str)
         logger.info(f'Text message received: "{text}"')
-        reply, cost = await self._chat(text)
+        reply, _ = await self._chat(text)
         assert update.effective_chat is not None
-        await self._send(f'[Cost: £{100 * cost:.3}p]')
         await self._send(reply)
 
     async def _check_is_me(self) -> bool:
@@ -142,8 +141,7 @@ class Bot:
                 transcript = self._transcriber(mp3_path)
                 logger.info(f'Transcript: "{transcript}"')
                 await self._send(f'[Transcript: "{transcript}"]')
-                reply, cost = await self._chat(transcript)
-                # await self._send(f'[Cost: £{100 * cost:.3}p]')
+                reply, _ = await self._chat(transcript)
                 await self._send(reply)
                 return
             except openai.error.APIConnectionError:
