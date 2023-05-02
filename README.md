@@ -17,3 +17,8 @@ pip install .
 ```shell
 tgpt
 ```
+
+## Usage
+
+- `/new`: Restart the bot so it forget the last conversation.
+- Voice notes in any language will be translated to English before being passed to ChatGPT.
