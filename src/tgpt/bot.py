@@ -44,7 +44,7 @@ class Bot:
         voice_handler = MessageHandler(filters.VOICE, self._voice_callback)
         self._application.add_handler(voice_handler)
 
-        new_session_handler = CommandHandler(  # type: ignore[var-annotated]
+        new_session_handler = CommandHandler(
             "new",
             self._start_session,
         )
@@ -111,7 +111,7 @@ class Bot:
             return
         message = f"Initializing chatbot session ({self._chatbot_class.__name__})"
         logger.info(message)
-        self._send(message)
+        _ = self._send(message)
         self._chatbot = self._chatbot_class()
 
     async def _get_mp3_from_voice(self, voice: Voice) -> Path:
