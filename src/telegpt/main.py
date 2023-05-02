@@ -1,4 +1,4 @@
-from tgpt.bot import Bot
+from telegpt.bot import Bot
 
 
 def main() -> None:

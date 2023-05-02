@@ -15,7 +15,7 @@ pip install .
 ## Launch the bot
 
 ```shell
-tgpt
+telegpt
 ```
 
 ## Usage
